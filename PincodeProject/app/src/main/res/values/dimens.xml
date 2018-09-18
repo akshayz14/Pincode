@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="button_radius">10dp</dimen>
+    <dimen name="font_medium">22sp</dimen>
+    <dimen name="navigation_drawer_width">240dp</dimen>
+</resources>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <group android:checkableBehavior="single">
+
+        <item
+            android:id="@+id/drawer_home"
+            android:icon="@drawable/ic_drawer_home"
+            android:title="Home" />
+        <item
+            android:id="@+id/current_pin"
+            android:icon="@drawable/ic_drawer_current_pin"
+            android:title="Find nearest post office" />
+        <item
+            android:id="@+id/about_us"
+            android:icon="@drawable/ic_drawer_about_us"
+            android:title="About Us" />
+
+
+        <item
+            android:id="@+id/privacy_policy"
+            android:icon="@drawable/ic_drawer_about_us"
+            android:title="Privacy Policy" />
+
+    </group>
+
+</menu>
