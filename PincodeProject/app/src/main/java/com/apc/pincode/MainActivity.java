@@ -197,6 +197,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         });
 
 
+        Log.d(TAG, "onCreate: ");
         hideSoftKeyboard();
         btnSearch.setOnClickListener(this);
 
