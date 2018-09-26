@@ -9,5 +9,6 @@ public class AppConstants {
     public static final String PREF_NAME = "Pincode";
 
 
-
+    public static final String RECENT_SEARCHES = "recent_searches";
 }
+

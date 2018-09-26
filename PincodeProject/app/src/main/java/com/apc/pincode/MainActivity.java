@@ -5,6 +5,7 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
@@ -20,12 +21,15 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.amitshekhar.DebugDB;
 import com.apc.pincode.sync.APIClient;
 import com.apc.pincode.sync.APIInterface;
 import com.google.android.gms.ads.AdListener;
@@ -33,7 +37,11 @@ import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
 import com.google.android.gms.ads.AdView;
 import com.google.android.gms.ads.MobileAds;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 
 import retrofit2.Call;
@@ -54,6 +62,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private DrawerLayout mDrawerLayout;
     private AdView mAdView;
     private View lineSeperatorView;
+    private LinkedHashSet recentSearchTerms;
+    private SharedPreferences mPreferences;
+    private RecentlySearchedItemsListAdapter recentSearchesAdapter;
+    private LinearLayout llRecentSearches;
 //    private ActionBarDrawerToggle drawerToggle;
 
 
@@ -63,9 +75,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         setContentView(R.layout.activity_main);
 
         mContext = this;
+        mPreferences = mContext.getSharedPreferences(AppConstants.PREF_NAME, MODE_PRIVATE);
         Toolbar toolbar = findViewById(R.id.toolbar1);
 
         setSupportActionBar(toolbar);
+
+        DebugDB.getAddressLog();
 
         ActionBar actionbar = getSupportActionBar();
         actionbar.setDisplayHomeAsUpEnabled(true);
@@ -79,16 +94,36 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mDrawerLayout = findViewById(R.id.drawer_layout);
         lvRecentSearches = findViewById(R.id.lvRecentSearches);
         lineSeperatorView = findViewById(R.id.lineSeperatorView);
-        lineSeperatorView.setVisibility(View.GONE);
+//        lineSeperatorView.setVisibility(View.GONE);
+        if (mPreferences.getString(AppConstants.RECENT_SEARCHES, "").isEmpty()) {
+            recentSearchTerms = new LinkedHashSet();
+        } else {
+            recentSearchTerms = new LinkedHashSet();
+
+            String recent = mPreferences.getString(AppConstants.RECENT_SEARCHES, "");
+            JsonArray recentlySearched = Utils.gson.fromJson(recent, JsonArray.class);
+
+//            if (recentlySearched == null) {
+//                llRecentSearches.setVisibility(View.GONE);
+//                return;
+//            }
+
+            for (int i = 0; i < recentlySearched.size(); i++) {
+                JsonElement b = recentlySearched.get(i);
+                recentSearchTerms.add(b.getAsString());
+            }
+
+        }
+
+
+        llRecentSearches = findViewById(R.id.llRecentSearches);
+        loadRecentSearchedItems();
 //        setupAds();
-
 //        MobileAds.initialize(this, "ca-app-pub-3940256099942544/6300978111");
-
 
         mAdView = findViewById(R.id.adView);
         AdRequest adRequest = new AdRequest.Builder().build();
         mAdView.loadAd(adRequest);
-
 
 
         mAdView.setAdListener(new AdListener() {
@@ -121,7 +156,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         });
 
 
-
 //        drawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout, R.string.navigation_drawer_open,
 //                R.string.navigation_drawer_close);
 
@@ -143,9 +177,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         break;
                     case R.id.current_pin:
 
-//                        Intent intent = new Intent(MainActivity.this, MapLocationActivity.class);
-//                        startActivity(intent);
-
                         Uri gmmIntentUri = Uri.parse("geo:0,0?q=postoffice near me");
                         Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
                         mapIntent.setPackage("com.google.android.apps.maps");
@@ -155,19 +186,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
                     case R.id.about_us:
 
-
                         AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
                         alertDialog.setTitle("Alert");
-                        alertDialog.setMessage("We are a company og one person");
+                        alertDialog.setMessage("We are a company of 1 person");
                         alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
                                 new DialogInterface.OnClickListener() {
                                     public void onClick(DialogInterface dialog, int which) {
                                         dialog.dismiss();
                                     }
                                 });
+
                         alertDialog.show();
-
-
                         break;
 
 
@@ -178,8 +207,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
                         dialog.setTitle("Privacy policy");
                         Button dialogButton = (Button) dialog.findViewById(R.id.btnDialogOK);
-                        // if button is clicked, close the custom dialog
-
                         dialogButton.setOnClickListener(new View.OnClickListener() {
                             @Override
                             public void onClick(View view) {
@@ -188,22 +215,65 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         });
 
                         dialog.show();
-
-
                         break;
                 }
                 return true;
             }
         });
-
-
-        Log.d(TAG, "onCreate: ");
         hideSoftKeyboard();
         btnSearch.setOnClickListener(this);
 
     }
 
+    private void loadRecentSearchedItems() {
 
+        String recent = mPreferences.getString(AppConstants.RECENT_SEARCHES, "");
+        JsonArray recentlySearched = Utils.gson.fromJson(recent, JsonArray.class);
+
+        if (recentlySearched == null) {
+
+            llRecentSearches.setVisibility(View.GONE);
+            return;
+        }
+
+        final ArrayList<String> recentItemsList = new ArrayList<>();
+        for (int i = recentlySearched.size() - 1; i >= 0; i--) {
+            JsonElement b = recentlySearched.get(i);
+            recentItemsList.add(b.getAsString());
+        }
+
+        lvRecentSearches.setVisibility(View.VISIBLE);
+        Log.d(TAG, "loadRecentSearchedItems: " + recentItemsList);
+        recentSearchesAdapter = new RecentlySearchedItemsListAdapter(mContext, 0, recentItemsList);
+        lvRecentSearches.setAdapter(recentSearchesAdapter);
+
+
+        lvRecentSearches.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                showProgressDialog();
+                String searchString = recentItemsList.get(i);
+                if (Utils.isInteger(searchString)) {
+                    llRecentSearches.setVisibility(View.GONE);
+                    getPOByPin(searchString);
+                } else {
+                    llRecentSearches.setVisibility(View.GONE);
+                    getPOByName(searchString);
+                }
+
+            }
+        });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+    }
 
     private void setupAds() {
 
@@ -279,8 +349,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private void setupAdapter(Response<PostOfficeNames> response) {
 
-        lineSeperatorView.setVisibility(View.VISIBLE);
+//        lineSeperatorView.setVisibility(View.VISIBLE);
+        if (response.body().getMessage().equals(getResources().getString(R.string.no_results_found))) {
+            if (adapter != null) {
+                adapter.clear();
+            }
+        }
+
         tvNumberOfResultsFound.setText(response.body().getMessage());
+
         if (response.body().postOffice == null) {
             dismissProgressDialog();
             Toast.makeText(mContext, "Please enter a valid pincode or place.", Toast.LENGTH_SHORT).show();
@@ -305,17 +382,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         switch (view.getId()) {
 
             case R.id.btnSearch:
+                llRecentSearches.setVisibility(View.GONE);
                 String searchText = "";
                 showProgressDialog();
                 if (!etSearchText.getText().toString().isEmpty()) {
                     hideSoftKeyboard();
                     searchText = etSearchText.getText().toString();
-                    if (!searchText.matches("[a-zA-Z ]*")) {
+
+                    if (!searchText.matches("[a-zA-Z1234567890 ]*")) {
                         Toast.makeText(mContext, R.string.text_error, Toast.LENGTH_SHORT).show();
                         dismissProgressDialog();
                         return;
 
                     }
+                    addSearchedTextToSet(searchText);
                     if (Utils.isInteger(searchText)) {
                         getPOByPin(searchText);
                     } else {
@@ -327,5 +407,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     Toast.makeText(mContext, R.string.enter_text, Toast.LENGTH_SHORT).show();
                 }
         }
+    }
+
+    private void addSearchedTextToSet(String searchText) {
+
+        recentSearchTerms.add(searchText);
+        Log.d(TAG, "addSearchedTextToSet: " + recentSearchTerms);
+        if (recentSearchTerms.size() > 5) {
+            recentSearchTerms.remove(recentSearchTerms.iterator().next());
+        }
+        Log.d(TAG, "addSearchedTextToSet: " + recentSearchTerms);
+        String recentSearchJsonStrings = Utils.gson.toJson(recentSearchTerms);
+
+        SharedPreferences.Editor editor = mPreferences.edit();
+        editor.putString(AppConstants.RECENT_SEARCHES, recentSearchJsonStrings);
+        editor.apply();
+
     }
 }
