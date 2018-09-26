@@ -66,11 +66,29 @@
                 android:textStyle="bold" />
 
 
-            <ListView
-                android:id="@+id/lvRecentSearches"
+            <LinearLayout
+                android:id="@+id/llRecentSearches"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                tools:listitem="@layout/recent_search_item" />
+                android:visibility="visible"
+                android:orientation="vertical"
+                android:layout_height="wrap_content">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:text="@string/recent_search"
+                    android:layout_height="wrap_content"
+                    android:textColor="@android:color/black"
+                    android:textSize="18sp"/>
+
+
+                <ListView
+                    android:id="@+id/lvRecentSearches"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    tools:listitem="@layout/recently_searched_item" />
+
+
+            </LinearLayout>
 
 
             <ListView

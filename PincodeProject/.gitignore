@@ -4,6 +4,11 @@
 /.idea/libraries
 /.idea/modules.xml
 /.idea/workspace.xml
+/.idea/misc.xml
+.idea/vcs.xml
+.idea/assetWizardSettings.xml
+.idea/caches/build_file_checksums.ser
+.idea/codeStyles/Project.xml
 .DS_Store
 /build
 /captures
