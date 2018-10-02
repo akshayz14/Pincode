@@ -167,6 +167,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
                 // set item as selected to persist highlight
+                hideSoftKeyboard();
+
                 menuItem.setChecked(true);
                 // close drawer when item is tapped
                 mDrawerLayout.closeDrawers();
@@ -174,8 +176,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
                 switch (menuItem.getItemId()) {
                     case R.id.drawer_home:
+                        Utils.trackGoogleAnalyticsEvent(AnalyticConstants.DRAWER_CLICK, AnalyticConstants.HOME_BUTTON_CLICKED, "", 1);
+
                         break;
                     case R.id.current_pin:
+                        Utils.trackGoogleAnalyticsEvent(AnalyticConstants.DRAWER_CLICK, AnalyticConstants.FIND_NEAREST_POST_OFFICE, "", 1);
 
                         Uri gmmIntentUri = Uri.parse("geo:0,0?q=postoffice near me");
                         Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
@@ -185,6 +190,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         break;
 
                     case R.id.about_us:
+
+                        Utils.trackGoogleAnalyticsEvent(AnalyticConstants.DRAWER_CLICK, AnalyticConstants.ABOUT_US_CLICKED, "", 1);
+
 
                         AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
                         alertDialog.setTitle("Alert");
@@ -201,6 +209,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 
                     case R.id.privacy_policy:
+                        Utils.trackGoogleAnalyticsEvent(AnalyticConstants.DRAWER_CLICK, AnalyticConstants.PRIVACY_POLICY_CLICKED, "", 1);
 
                         final Dialog dialog = new Dialog(mContext);
                         dialog.setContentView(R.layout.privacy_policy_custom_dialog);
@@ -253,6 +262,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
                 showProgressDialog();
                 String searchString = recentItemsList.get(i);
+                Utils.trackGoogleAnalyticsEvent(AnalyticConstants.RECENT_SEARCH_LIST, AnalyticConstants.RECENT_SEARCH_ITEM_CLICK, searchString, i);
                 if (Utils.isInteger(searchString)) {
                     llRecentSearches.setVisibility(View.GONE);
                     getPOByPin(searchString);
@@ -360,7 +370,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         if (response.body().postOffice == null) {
             dismissProgressDialog();
-            Toast.makeText(mContext, "Please enter a valid pincode or place.", Toast.LENGTH_SHORT).show();
+            showErrorDialog(getResources().getString(R.string.text_error));
             return;
         }
         List<PostOffice> postOfficeList = response.body().getPostOffice();
@@ -388,25 +398,49 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 if (!etSearchText.getText().toString().isEmpty()) {
                     hideSoftKeyboard();
                     searchText = etSearchText.getText().toString();
+                    Utils.trackGoogleAnalyticsEvent(AnalyticConstants.SEARCH, AnalyticConstants.TEXT_SEARCHED, searchText, 1);
 
                     if (!searchText.matches("[a-zA-Z1234567890 ]*")) {
-                        Toast.makeText(mContext, R.string.text_error, Toast.LENGTH_SHORT).show();
+//                        Toast.makeText(mContext, R.string.text_error, Toast.LENGTH_SHORT).show();
+                        showErrorDialog(getResources().getString(R.string.text_error));
                         dismissProgressDialog();
                         return;
 
                     }
                     addSearchedTextToSet(searchText);
                     if (Utils.isInteger(searchText)) {
+                        Utils.trackGoogleAnalyticsEvent(AnalyticConstants.SEARCH, AnalyticConstants.TEXT_SEARCHED, "Search by pin", 1);
                         getPOByPin(searchText);
                     } else {
+                        Utils.trackGoogleAnalyticsEvent(AnalyticConstants.SEARCH, AnalyticConstants.TEXT_SEARCHED, "Search by name", 1);
                         getPOByName(searchText);
                     }
 
                 } else {
                     dismissProgressDialog();
-                    Toast.makeText(mContext, R.string.enter_text, Toast.LENGTH_SHORT).show();
+                    Utils.trackGoogleAnalyticsEvent(AnalyticConstants.SEARCH, AnalyticConstants.TEXT_SEARCHED, "Invalid text", 1);
+//                    Toast.makeText(mContext, R.string.enter_text, Toast.LENGTH_SHORT).show();
+                    showErrorDialog(getResources().getString(R.string.enter_text));
                 }
         }
+    }
+
+    private void showErrorDialog(String text) {
+        adapter.clear();
+        tvNumberOfResultsFound.setText("");
+
+        AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
+        alertDialog.setTitle("Alert");
+        alertDialog.setMessage(text);
+        alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                });
+
+        alertDialog.show();
+
     }
 
     private void addSearchedTextToSet(String searchText) {

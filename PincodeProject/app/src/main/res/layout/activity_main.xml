@@ -33,14 +33,14 @@
                 android:id="@+id/etSearchText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:drawableLeft="@mipmap/post_office_image"
+                android:drawableLeft="@drawable/ic_location_icon"
                 android:gravity="center"
                 android:hint="@string/Enter_po_name_or_pin" />
 
             <Button
                 android:id="@+id/btnSearch"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="40dp"
                 android:layout_gravity="center"
                 android:layout_marginLeft="50dp"
                 android:layout_marginRight="50dp"
